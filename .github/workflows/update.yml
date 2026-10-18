@@ -1,0 +1,29 @@
+name: Build routing lists
+on:
+  push:
+    paths: ['rules.json', 'lists/**', 'tools/**', 'tests/**', '.github/workflows/**']
+  schedule:
+    - cron: '20 22 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: routing-lists
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m unittest discover -s tests -v
+      - run: python tools/build.py
+      - name: Publish validated data
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add dist
+          git diff --cached --quiet || git commit -m 'Refresh compiled routing data'
+          git push
