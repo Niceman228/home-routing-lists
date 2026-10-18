@@ -1,0 +1,42 @@
+[
+  {
+    "url": "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Categories/geoblock.lst",
+    "sha256": "7fc41ff662724abfecfc70795a4130995f9072dabccf93638a33037f5f5ac5a5"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Services/google_ai.lst",
+    "sha256": "10bc8410a6618c6cf07bfd313d377f4bea8f1c6a354d54bbb7c0012b1a8367f5"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Services/discord.lst",
+    "sha256": "2f18f3671d1b40ad936929d87012a5dcc639368a32cb660220773a2084cdc5e8"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Services/telegram.lst",
+    "sha256": "13c98dacc0f99a5fccf51ec3f12054f599dbc34e7282348c3722125922834b7a"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Services/meta.lst",
+    "sha256": "7238baf585f1f59c7e1504704f4bda37cc134ef5ccb1d2738cff557b363e9b95"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Services/twitter.lst",
+    "sha256": "646af5dc770ac526cf4348c6878a6d7cdd98e97446304952b1864529de2b89be"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Services/youtube.lst",
+    "sha256": "71fac5162d67fce8ffd0be6287de6f9159507abdab21573eb3eda813641582c2"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Categories/block.lst",
+    "sha256": "8e67e539e654090bbb7c53cdbe706df4c3e12a64007b38cf5d78dc2848b32a72"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Categories/news.lst",
+    "sha256": "5b606fb6486e08339e187774c677de95226bc82b9b9676370aec563ba0be41a7"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/ru.list",
+    "sha256": "829b6b6a97da60dd8d63bfae0d1b3b6fe39a91e470144b6c418b8940d747776a"
+  }
+]

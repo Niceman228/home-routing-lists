@@ -1,0 +1,2 @@
+# Always DIRECT. One domain per line; includes its subdomains.
+# Empty by default: all unlisted destinations already use DIRECT.

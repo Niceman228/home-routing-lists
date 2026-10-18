@@ -1,0 +1,2 @@
+# Additional domains for zapret2. One domain per line.
+# Use proxy.txt for services that do not work with the tested DPI strategy.
