@@ -1,20 +1,62 @@
 {
   "schema": 1,
-  "default": "direct",
+  "default": "proxy",
   "zapret_ready": false,
   "services": [
-    {"name": "geoblock", "route": "proxy"},
-    {"name": "google_ai", "route": "proxy"},
-    {"name": "discord", "route": "proxy"},
-    {"name": "telegram", "route": "proxy"},
-    {"name": "meta", "route": "proxy"},
-    {"name": "twitter", "route": "proxy"},
-    {"name": "youtube", "route": "proxy"},
-    {"name": "block", "route": "proxy"},
-    {"name": "news", "route": "proxy"}
+    {
+      "name": "geoblock",
+      "route": "proxy"
+    },
+    {
+      "name": "google_ai",
+      "route": "proxy"
+    },
+    {
+      "name": "discord",
+      "route": "proxy"
+    },
+    {
+      "name": "telegram",
+      "route": "proxy"
+    },
+    {
+      "name": "meta",
+      "route": "proxy"
+    },
+    {
+      "name": "twitter",
+      "route": "proxy"
+    },
+    {
+      "name": "youtube",
+      "route": "proxy"
+    },
+    {
+      "name": "block",
+      "route": "proxy"
+    },
+    {
+      "name": "news",
+      "route": "proxy"
+    }
   ],
   "regions": [
-    {"match": {"domain_suffix": ["ru", "рф"]}, "route": "direct"},
-    {"match": {"geoip": ["RU"]}, "route": "direct"}
+    {
+      "match": {
+        "domain_suffix": [
+          "ru",
+          "рф"
+        ]
+      },
+      "route": "direct"
+    },
+    {
+      "match": {
+        "geoip": [
+          "RU"
+        ]
+      },
+      "route": "direct"
+    }
   ]
 }
