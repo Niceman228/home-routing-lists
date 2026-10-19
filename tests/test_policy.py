@@ -50,6 +50,17 @@ class PolicyTests(unittest.TestCase):
         self.manual['zapret'] = ['blocked.example']
         with self.assertRaises(AssertionError):
             compile_policy(self.p, self.manual, {'youtube': []}, self.geo)
+    def test_zapret_wins_service_but_respects_manual_exceptions(self):
+        self.p['zapret_ready'] = True
+        self.manual = {'direct': ['safe.youtube.com'], 'proxy': ['private.youtube.com'],
+                       'zapret': ['youtube.com']}
+        b = compile_policy(self.p, self.manual, {'youtube': ['youtube.com']}, self.geo)
+        for host, wanted in [('www.youtube.com', True), ('safe.youtube.com', False),
+                             ('private.youtube.com', False), ('unknown.example', False)]:
+            self.assertEqual(any(matches(r, host, '8.8.8.8') for r in b['zapret_rules']['rules']), wanted)
+        self.assertFalse(any(matches(r, 'www.youtube.com', '8.8.8.8') for r in b['proxy_rules']['rules']))
+        self.assertTrue(any(matches(r, 'private.youtube.com', '8.8.8.8') for r in b['proxy_rules']['rules']))
+        self.assertTrue(any(matches(r, 'www.youtube.com', '8.8.8.8') for r in b['proxy_dns']['rules']))
     def test_domain_normalization(self):
         self.assertEqual(domain('рф', tld=True), 'xn--p1ai')
         for value in ('bad;reboot.ru', '192.168.1.1', 'foo..ru', 'https://foo.ru'):

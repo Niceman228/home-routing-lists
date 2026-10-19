@@ -1,2 +1,3 @@
-# Additional domains for zapret2. One domain per line.
-# Use proxy.txt for services that do not work with the tested DPI strategy.
+# Discord web/API and CDN over TCP/443; gateway and UDP use VLESS.
+discord.com
+cdn.discordapp.com

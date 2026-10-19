@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "default": "proxy",
-  "zapret_ready": false,
+  "zapret_ready": true,
   "services": [
     {
       "name": "geoblock",
@@ -45,7 +45,7 @@
       "match": {
         "domain_suffix": [
           "ru",
-          "рф"
+          "СЂС„"
         ]
       },
       "route": "direct"

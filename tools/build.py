@@ -103,11 +103,14 @@ def compile_policy(policy, manual, service_domains, country):
         intercept = [ipaddress.ip_network('0.0.0.0/0')]
     # FakeIP DNS must use only domain conditions, never destination GeoIP.
     # Domain branches are ordered identically; IP classification happens on real IPs.
-    dns_branches = [(a, m) for a, m in branches if 'domain_suffix' in m]
+    # Both explicit proxy and zapret destinations need stable domain identity.
+    # The marked zapret outbound resolves through the real upstream resolver.
+    dns_branches = [('proxy' if a == 'zapret' else a, m) for a, m in branches if 'domain_suffix' in m]
     dns = effective(dns_branches, 'proxy', 'direct')
     proxied_domains = sorted({d for a, m in branches if a == 'proxy' for d in m.get('domain_suffix', [])})
     return {'schema': 2, 'default': policy['default'], 'proxy_rules': proxy,
-            'proxy_dns': dns, 'intercept_v4': [str(x) for x in ipaddress.collapse_addresses(intercept)],
+            'proxy_dns': dns, 'zapret_rules': effective(branches, 'zapret', 'direct'),
+            'intercept_v4': [str(x) for x in ipaddress.collapse_addresses(intercept)],
             'zapret_domains': sorted(set(zaps)), 'proxy_domains': proxied_domains,
             'direct_domains': manual['direct'], 'zapret_ready': bool(policy.get('zapret_ready'))}
 
