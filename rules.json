@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "default": "proxy",
-  "zapret_ready": true,
+  "zapret_ready": false,
   "services": [
     {
       "name": "geoblock",

@@ -1,12 +1,1 @@
-# Verified transport profiles are enforced by the router; other transports use VLESS.
-discord.com
-discordapp.com
-discordapp.net
-gateway.discord.gg
-googlevideo.com
-jnn-pa.googleapis.com
-youtu.be
-youtube.com
-youtube.googleapis.com
-youtubei.googleapis.com
-ytimg.com
+# Disabled after application failures. Keep empty until a new router profile is verified.
