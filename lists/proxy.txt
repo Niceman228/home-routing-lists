@@ -1,16 +1,5 @@
-# Explicit VLESS overrides; service categories also include Discord and YouTube.
+# Explicit VLESS overrides.
 chatgpt.com
-discord.com
-discordapp.com
-discordapp.net
-gateway.discord.gg
-googlevideo.com
-jnn-pa.googleapis.com
 oaistatic.com
 oaiusercontent.com
 openai.com
-youtu.be
-youtube.com
-youtube.googleapis.com
-youtubei.googleapis.com
-ytimg.com
