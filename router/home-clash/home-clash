@@ -1,0 +1,130 @@
+#!/bin/sh
+set -eu
+umask 077
+B=/etc/home-clash
+R=/tmp/home-clash
+mkdir -p "$R"
+fail() { echo '{"ok":false,"error":"Subscription operation failed; previous configuration retained"}'; exit 1; }
+api() {
+ path=$1;shift
+ { printf 'header = "Authorization: Bearer '; tr -d '\r\n' < "$B/private/api-secret"; printf '"\n'; } |
+ curl --config - --noproxy '*' -fsS --connect-timeout 3 --max-time 15 "$@" "http://127.0.0.1:19090$path" 2>"$R/api.err"
+}
+normalize() {
+ awk -f "$B/normalize.awk" "$1" > "$2"
+ cat >> "$2" <<'EOF'
+mixed-port: 11082
+socks-port: 0
+redir-port: 0
+tproxy-port: 0
+allow-lan: false
+bind-address: 127.0.0.1
+external-controller: 127.0.0.1:19090
+interface-name: eth1
+routing-mark: 134217728
+mode: rule
+ipv6: false
+find-process-mode: off
+log-level: error
+geodata-mode: false
+tun:
+  enable: false
+profile:
+  store-selected: true
+  store-fake-ip: true
+EOF
+ printf 'secret: "' >> "$2";tr -d '\r\n' < "$B/private/api-secret" >> "$2";printf '"\n' >> "$2"
+}
+put_selection() {
+ group=$1;choice=$2
+ jq -n --arg name "$choice" '{name:$name}' > "$R/select.json"
+ encoded=$(jq -nr --arg s "$group" '$s|@uri')
+ api "/proxies/$encoded" -X PUT -H 'Content-Type: application/json' --data-binary "@$R/select.json" >/dev/null
+}
+save_selection() {
+ api /proxies > "$R/selection-proxies.json" || return 1
+ jq -e '[.proxies|to_entries[]|select(.value.type=="Selector" and .key!="GLOBAL")|{group:.key,name:.value.now}]' "$R/selection-proxies.json" > "$B/private/selections.json.new" || return 1
+ mv "$B/private/selections.json.new" "$B/private/selections.json"
+}
+restore_selection() {
+ [ -f "$B/private/selections.json" ] || return 0
+ api /proxies > "$R/proxies.json" || return 1
+ jq -c '.[]' "$B/private/selections.json" > "$R/choices.jsonl"
+ while IFS= read -r row; do
+  group=$(printf '%s' "$row"|jq -r '.group');choice=$(printf '%s' "$row"|jq -r '.name')
+  if jq -e --arg g "$group" --arg p "$choice" '.proxies[$g].all|index($p)!=null' "$R/proxies.json" >/dev/null 2>&1; then put_selection "$group" "$choice" || true;fi
+ done < "$R/choices.jsonl"
+}
+health() {
+ api /rules > "$R/rules.json" || return 1
+ group=$(jq -r '[.rules[]|select(.type=="Match")|.proxy][0] // empty' "$R/rules.json")
+ [ -n "$group" ] || return 1
+ encoded=$(jq -nr --arg s "$group" '$s|@uri')
+ api "/proxies/$encoded/delay?timeout=8000&url=https%3A%2F%2Fwww.gstatic.com%2Fgenerate_204" > "$R/delay.json" || return 1
+ jq -e '.delay|type=="number"' "$R/delay.json" >/dev/null
+}
+ensure_health() {
+ health && return 0
+ api /proxies > "$R/proxies.json" || return 1
+ jq -r --arg g "$group" '.proxies[$g].all[]? | select(.!="DIRECT" and .!="REJECT")' "$R/proxies.json" | head -n 32 > "$R/alternatives"
+ while IFS= read -r choice;do
+  put_selection "$group" "$choice" || continue
+  health && return 0
+ done < "$R/alternatives"
+ return 1
+}
+reload_file() {
+ jq -n --arg path "$1" '{path:$path}' > "$R/reload.json"
+ api '/configs?force=true' -X PUT -H 'Content-Type: application/json' --data-binary "@$R/reload.json" >/dev/null
+}
+prepare() {
+ [ -x "$R/mihomo" ] || { gzip -dc "$B/assets/mihomo.gz" > "$R/mihomo.new";chmod 700 "$R/mihomo.new";mv "$R/mihomo.new" "$R/mihomo"; }
+ cp "$B/assets/country.mmdb" "$R/country.mmdb"
+ mkdir -p "$R/rule-providers"
+ [ -f "$R/rule-providers/category-ru.mrs" ] || cp "$B/assets/category-ru.mrs" "$R/rule-providers/category-ru.mrs"
+ normalize "$B/private/source.yaml" "$R/config.yaml"
+}
+update() {
+ mkdir /var/lock/home-clash-update.lock 2>/dev/null || { echo '{"ok":false,"error":"Update already running"}';exit 1; }
+ trap 'rmdir /var/lock/home-clash-update.lock 2>/dev/null || true' EXIT HUP INT TERM
+ urlfile=$B/private/subscription.url
+ [ "$1" != import ] || urlfile=$B/private/new-url
+ url=$(cat "$urlfile")
+ case "$url" in https://*) ;; *) fail;; esac
+ case "$url" in *\"*|*\\*|*'
+'*) fail;; esac
+ printf 'url = "%s"\n' "$url" > "$R/fetch.curl"
+ curl --config "$R/fetch.curl" --user-agent 'mihomo/1.19.32' --fail --silent --location --proto '=https' --proto-redir '=https' --connect-timeout 10 --max-time 50 --max-filesize 1048576 -o "$R/source.new" 2>"$R/fetch.err" || fail
+ grep -q '^proxies:' "$R/source.new" && grep -q '^rules:' "$R/source.new" || fail
+ normalize "$R/source.new" "$R/candidate.yaml"
+ "$R/mihomo" -t -d "$R" -f "$R/candidate.yaml" > "$R/check.log" 2>&1 || fail
+ save_selection || fail
+ if ! reload_file "$R/candidate.yaml"; then reload_file "$R/config.yaml" || true;restore_selection || true;fail;fi
+ restore_selection || true
+ if ! ensure_health;then reload_file "$R/config.yaml" || true;restore_selection || true;fail;fi
+ cp "$B/private/source.yaml" "$B/private/previous.yaml"
+ cp "$R/source.new" "$B/private/source.yaml.new";mv "$B/private/source.yaml.new" "$B/private/source.yaml"
+ cp "$R/candidate.yaml" "$R/config.yaml"
+ if "$B/endpoints.sh" > "$R/endpoints.log" 2>&1;then rm -f "$B/endpoint-warning";else echo pending > "$B/endpoint-warning";fi
+ [ "$1" != import ] || { cp "$urlfile" "$B/private/subscription.url";cp "$urlfile" /etc/home-routing/private/subscription.url; }
+ save_selection
+ date -u +%Y-%m-%dT%H:%M:%SZ > "$B/updated"
+ echo '{"ok":true}'
+}
+case "${1:-status}" in
+ prepare) prepare;;
+ restore-selection) sleep 2;for attempt in 1 2 3 4 5;do restore_selection && exit 0;sleep 2;done;exit 1;;
+ update|import) update "$1";;
+ health) health;;
+ api-read)
+  case "$2" in /version|/connections|/proxies) api "$2";; /proxies/main-urltest-out)
+   api /rules > "$R/rules.json";group=$(jq -r '[.rules[]|select(.type=="Match")|.proxy][0]' "$R/rules.json");encoded=$(jq -nr --arg s "$group" '$s|@uri');api "/proxies/$encoded";; *) fail;;esac
+ ;;
+ select) put_selection "$2" "$3";save_selection;echo '{"ok":true}';;
+ status)
+  api /proxies > "$R/proxies.json" || fail
+  api /rules > "$R/rules.json" || fail
+  jq -n --slurpfile p "$R/proxies.json" --slurpfile r "$R/rules.json" --arg updated "$(cat "$B/updated" 2>/dev/null || true)" '{ok:true,engine:"mihomo",updated:$updated,rules:($r[0].rules|length),groups:[$p[0].proxies|to_entries[]|select(.value.type=="Selector" and .key!="GLOBAL")|{name:.key,selected:.value.now,options:.value.all}],process_rules_apply_to_router_only:true}'
+ ;;
+ *) fail;;
+esac

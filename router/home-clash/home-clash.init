@@ -1,0 +1,17 @@
+#!/bin/sh /etc/rc.common
+USE_PROCD=1
+START=23
+STOP=88
+start_service() {
+ [ -f /etc/home-clash/enabled ] || return 0
+ /usr/sbin/home-clash prepare || return 1
+ procd_open_instance
+ procd_set_param command /tmp/home-clash/mihomo -d /tmp/home-clash -f /tmp/home-clash/config.yaml
+ procd_set_param env GOMEMLIMIT=80MiB GOGC=40
+ procd_set_param respawn 3600 5 5
+ procd_set_param term_timeout 5
+ procd_set_param stdout 0
+ procd_set_param stderr 0
+ procd_close_instance
+ /usr/sbin/home-clash restore-selection >/dev/null 2>&1 &
+}

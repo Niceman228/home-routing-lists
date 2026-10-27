@@ -1,0 +1,8 @@
+{
+ "admin/services/home-clash": {
+  "title": "Подписка Clash",
+  "order": 19,
+  "action": {"type": "view", "path": "home-clash"},
+  "depends": {"acl": ["luci-app-home-clash"]}
+ }
+}

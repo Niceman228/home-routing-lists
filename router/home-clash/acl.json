@@ -1,0 +1,7 @@
+{
+ "luci-app-home-clash": {
+  "description": "Clash subscription settings for the router administrator",
+  "read": {"file": {"/usr/sbin/home-clash": ["exec"]}, "ubus": {"file": ["exec"]}},
+  "write": {"file": {"/usr/sbin/home-clash": ["exec"], "/etc/home-clash/private/new-url": ["write"]}, "ubus": {"file": ["exec", "write"]}}
+ }
+}
